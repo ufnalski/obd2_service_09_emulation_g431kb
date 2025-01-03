@@ -52,7 +52,7 @@ void MX_FDCAN1_Init(void)
 	hfdcan1.Init.DataSyncJumpWidth = 3;
 	hfdcan1.Init.DataTimeSeg1 = 12;
 	hfdcan1.Init.DataTimeSeg2 = 3;
-	hfdcan1.Init.StdFiltersNbr = 1;
+	hfdcan1.Init.StdFiltersNbr = 2;
 	hfdcan1.Init.ExtFiltersNbr = 0;
 	hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
 	if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
@@ -61,7 +61,7 @@ void MX_FDCAN1_Init(void)
 	}
 	/* USER CODE BEGIN FDCAN1_Init 2 */
 	FDCAN_FilterTypeDef sFilterConfig;
-
+	// ECU
 	sFilterConfig.IdType = FDCAN_STANDARD_ID;
 	sFilterConfig.FilterIndex = 0;
 	sFilterConfig.FilterType = FDCAN_FILTER_MASK;
@@ -74,6 +74,23 @@ void MX_FDCAN1_Init(void)
 		/* Filter configuration Error */
 		Error_Handler();
 	}
+	// CAN-TP control frame
+	sFilterConfig.IdType = FDCAN_STANDARD_ID;
+	sFilterConfig.FilterIndex = 1;
+	sFilterConfig.FilterType = FDCAN_FILTER_MASK;
+	sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+	sFilterConfig.FilterID1 = 0x7E8 - 0x008; // https://community.carloop.io/t/how-to-request-vin/153
+	sFilterConfig.FilterID2 = 0x7FF;
+	//sFilterConfig.RxBufferIndex = 0;
+	if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig) != HAL_OK)
+	{
+		/* Filter configuration Error */
+		Error_Handler();
+	}
+	// https://community.st.com/t5/stm32-mcus-products/how-to-set-fdcan-masking-filter-with-stm32h503/td-p/77221
+	/* Configure global filter to reject all non-matching frames */
+	HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT,
+	FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE);
 	/* USER CODE END FDCAN1_Init 2 */
 
 }

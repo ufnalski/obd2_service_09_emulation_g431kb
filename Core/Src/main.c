@@ -62,6 +62,8 @@ uint8_t pids_supported_service_09[8] =
 { 0x06, 0x49, 0x00, 0x60, 0x00, 0x00, 0x00, 0xAA }; // VIN support
 // https://en.wikipedia.org/wiki/Vehicle_identification_number
 char vin[] = "L0V3Y0UKAT3NJUL1A"; // 17 characters
+
+uint32_t frame_separation_time = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -136,42 +138,46 @@ int main(void)
 		{
 			canDatacheck = 0;
 
-			if ((rxData[0] == 0x02) && (rxData[1] == 0x01)
-					&& (rxData[2] == 0x00)) // Welcome PIDs 0x01-0x20 Service 01
+			if ((rxHeader.Identifier == 0x7DF) && (rxData[0] == 0x02)
+					&& (rxData[1] == 0x01) && (rxData[2] == 0x00)) // Welcome PIDs 0x01-0x20 Service 01
 			{
 				txHeader.Identifier = 0x7E8;
 				memcpy(txData, pids_supported_01_20_service_01, 8);
 				SendCanFrame();
 				HAL_GPIO_TogglePin(USER_BLUE_LED_GPIO_Port, USER_BLUE_LED_Pin);
 			}
-			else if ((rxData[0] == 0x02) && (rxData[1] == 0x09)
-					&& (rxData[2] == 0x00)) // Welcome PIDs Service 09
+			else if ((rxHeader.Identifier == 0x7DF) && (rxData[0] == 0x02)
+					&& (rxData[1] == 0x09) && (rxData[2] == 0x00)) // Welcome PIDs Service 09
 			{
 				txHeader.Identifier = 0x7E8;
 				memcpy(txData, pids_supported_service_09, 8);
 				SendCanFrame();
 				HAL_GPIO_TogglePin(USER_BLUE_LED_GPIO_Port, USER_BLUE_LED_Pin);
 			}
-			else if ((rxData[0] == 0x02) && (rxData[1] == 0x09)
-					&& (rxData[2] == 0x02)) // VIN
+			else if ((rxHeader.Identifier == 0x7DF) && (rxData[0] == 0x02)
+					&& (rxData[1] == 0x09) && (rxData[2] == 0x02)) // VIN
 			{
 				// Frame 1
 				txHeader.Identifier = 0x7E8;
 				// https://en.wikipedia.org/wiki/ISO_15765-2
-				txData[0] = 0x10;
-				txData[1] = 0x17;
+				// https://automotivevehicletesting.com/vehicle-diagnostics/uds-protocol/iso-15765-2-protocol/
+				txData[0] = 0x10; // [first nibble of first byte] PCI (Protocol Control Information): first frame of a multi-frame/extended message
+				txData[1] = 0x14; // [second nibble of first byte and entire second byte] payload size: 20 bytes
 				txData[2] = 0x49; // Response for service 0x09
 				txData[3] = 0x02; // PID for VIN
-				txData[4] = 0x01;
+				txData[4] = 0x01; // ??? https://community.carloop.io/t/how-to-request-vin/153/4
 				txData[5] = vin[0]; // VIN first byte
 				txData[6] = vin[1];
 				txData[7] = vin[2];
 				SendCanFrame();
-				HAL_Delay(10);
-
+			}
+			else if ((rxHeader.Identifier == 0x7E8 - 0x008)
+					&& (rxData[0] == 0x30) && (rxData[1] == 0x00)) // control frame
+			{
+				frame_separation_time = rxData[2]; // ms
 				// Frame 2
 				txHeader.Identifier = 0x7E8;
-				txData[0] = 0x21; // Continuation frame identifier
+				txData[0] = 0x21; // Continuation frame identifier [PCI and seq num]
 				txData[1] = vin[3];
 				txData[2] = vin[4];
 				txData[3] = vin[5];
@@ -179,12 +185,11 @@ int main(void)
 				txData[5] = vin[7];
 				txData[6] = vin[8];
 				txData[7] = vin[9];
+				HAL_Delay(frame_separation_time);
 				SendCanFrame();
-				HAL_Delay(10);
-
 				// Frame 3
 				txHeader.Identifier = 0x7E8;
-				txData[0] = 0x22; // Continuation frame identifier
+				txData[0] = 0x22; // Continuation frame identifier [PCI and seq num]
 				txData[1] = vin[10];
 				txData[2] = vin[11];
 				txData[3] = vin[12];
@@ -192,6 +197,7 @@ int main(void)
 				txData[5] = vin[14];
 				txData[6] = vin[15];
 				txData[7] = vin[16]; // VIN last byte
+				HAL_Delay(frame_separation_time);
 				SendCanFrame();
 				HAL_GPIO_TogglePin(USER_GREEN_LED_GPIO_Port,
 				USER_GREEN_LED_Pin);
