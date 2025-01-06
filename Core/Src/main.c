@@ -161,11 +161,13 @@ int main(void)
 				txHeader.Identifier = 0x7E8;
 				// https://en.wikipedia.org/wiki/ISO_15765-2
 				// https://automotivevehicletesting.com/vehicle-diagnostics/uds-protocol/iso-15765-2-protocol/
-				txData[0] = 0x10; // [first nibble of first byte] PCI (Protocol Control Information): first frame of a multi-frame/extended message
-				txData[1] = 0x14; // [second nibble of first byte and entire second byte] payload size: 20 bytes
-				txData[2] = 0x49; // Response for service 0x09
+				// https://community.carloop.io/t/how-to-request-vin/153/4
+				// https://www.csselectronics.com/pages/obd2-explained-simple-intro (Example 1)
+				txData[0] = 0x10; // [first nibble/nybble of first byte] PCI (Protocol Control Information): first frame of a multi-frame/extended message
+				txData[1] = 0x14; // [second nibble/nybble of first byte and entire second byte] payload size: 20 bytes
+				txData[2] = 0x49; // Response (0x40) for service 0x09
 				txData[3] = 0x02; // PID for VIN
-				txData[4] = 0x01; // ??? https://community.carloop.io/t/how-to-request-vin/153/4
+				txData[4] = 0x01; // NODI (no data indicator)
 				txData[5] = vin[0]; // VIN first byte
 				txData[6] = vin[1];
 				txData[7] = vin[2];

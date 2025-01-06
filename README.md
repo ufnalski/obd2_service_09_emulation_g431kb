@@ -13,6 +13,7 @@ Don't worry :slightly_smiling_face: Just hit Alt-K to generate /Drivers/CMCIS/ a
 # OBD-II
 * [OBD-II PIDs](https://en.wikipedia.org/wiki/OBD-II_PIDs) (Wikipedia)
 * [Vehicle identification number](https://en.wikipedia.org/wiki/Vehicle_identification_number) (Wikipedia)
+* [Example 1: OBD2 Vehicle Identification Number (VIN)](https://www.csselectronics.com/pages/obd2-explained-simple-intro) (CSS Electronics)
 
 # CAN-TP
 * [ISO 15765-2](https://en.wikipedia.org/wiki/ISO_15765-2) (Wikipedia)
